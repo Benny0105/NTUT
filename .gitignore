@@ -1,0 +1,22 @@
+# ROS build artifacts
+build/
+devel/
+install/
+log/
+
+# VINS-Fusion binaries and large files
+*.o
+*.bin
+
+# VSCode, PyCharm, etc.
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.pyc
+
+# Misc
+.DS_Store
+*.swp
+*.swo
