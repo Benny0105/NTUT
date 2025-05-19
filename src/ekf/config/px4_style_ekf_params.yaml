@@ -1,0 +1,180 @@
+# PX4 風格 EKF 參數配置
+
+# 基本參數
+freq: 50.0                  # EKF 更新頻率 (Hz)
+sensor_timeout: 5.0         # 傳感器數據超時時間 (秒)
+base_frame_id: "base_link"  # 機體座標系 ID
+global_frame_id: "map"      # 全局座標系 ID
+output_frame_id: "odom_combined" # 輸出座標系 ID
+
+# 傳感器設置
+use_imu: true               # 使用 IMU 數據
+use_gps: false              # 禁用 GPS 數據 - 修改為false
+use_mag: true               # 使用磁力計數據
+use_baro: true              # 使用氣壓計數據
+use_odom: true              # 使用里程計數據
+use_gps_vel: false          # 禁用 GPS 速度數據 - 修改為false
+min_gps_satellites: 6       # 最小衛星數量要求
+
+# 延遲補償參數 (秒)
+imu_delay: 0.0              # IMU 數據延遲
+gps_delay: 0.2              # GPS 數據延遲
+mag_delay: 0.0              # 磁力計數據延遲
+baro_delay: 0.1             # 氣壓計數據延遲
+odom_delay: 0.1             # 里程計數據延遲
+
+# 互補濾波器時間常數
+tau_vel: 0.25               # 速度濾波器時間常數
+tau_pos: 0.25               # 位置濾波器時間常數
+
+# 噪聲參數 (EKF2_*_NOISE)
+# IMU 陀螺儀噪聲 (rad/s)
+gyro_noise: 0.001
+# IMU 加速度計噪聲 (m/s^2)
+accel_noise: 0.01
+# GPS 位置噪聲 (m)
+gps_pos_noise_x: 0.5
+gps_pos_noise_y: 0.5
+gps_pos_noise_z: 0.7
+# GPS 速度噪聲 (m/s)
+gps_vel_noise: 0.1
+# 磁力計噪聲 (gauss)
+mag_noise: 0.01
+# 氣壓計高度噪聲 (m)
+baro_noise: 0.5
+# 里程計噪聲參數(新增)
+odom_pos_noise: 0.05        # 里程計位置噪聲 (m) - 降低為更高的權重
+odom_vel_noise: 0.10        # 里程計速度噪聲 (m/s) - 增加至0.10
+odom_att_noise: 0.01       # 里程計姿態噪聲 (rad) - 降低為更高的權重
+odom_innov_gate: 10.0       # 里程計創新閾值 - 從5.0增加到10.0，處理高度差異
+
+# 新增：原始GPS數據處理參數
+gps_noise_lat_lon: 2.0    # 原始GPS緯度/經度噪聲(米)
+gps_noise_alt: 5.0        # 原始GPS高度噪聲(米)
+gps_pos_innov_gate: 3.0   # GPS位置新息閾值
+
+# 創新門限參數 (EKF2_*_GATE)
+pos_innov_gate: 5.0         # 位置更新創新門限
+vel_innov_gate: 3.0         # 速度更新創新門限
+hgt_innov_gate: 3.0         # 高度更新創新門限
+mag_innov_gate: 3.0         # 磁力計更新創新門限
+
+# 傳感器控制參數
+# 位掩碼: 0位=無，1位=有
+imu_control: 3              # IMU 融合控制 (位 0 - 加速度計, 位 1 - 陀螺儀)
+gps_control: 0              # GPS 融合控制 (位 0 - 位置, 位 1 - 速度, 位 2 - 高度) - 修改為0禁用
+baro_control: 1             # 氣壓計融合控制 (0=不使用, 1=使用)
+mag_control: 7              # 磁力計融合控制 (位 0 - 磁場, 位 1 - 航向, 位 2 - 磁偏角)
+
+# 高度傳感器選擇 (EKF2_HGT_MODE)
+height_sensor: 0            # 高度數據來源 (0=氣壓計, 1=GPS, 2=測距儀, 3=視覺)
+
+# PX4 特有參數
+# 加速度阈值 (m/s^2)，用於檢測靜止狀態
+accel_threshold: 5.0
+# 角速度阈值 (rad/s)，用於檢測靜止狀態
+gyro_threshold: 0.5
+# 靜止時間阈值 (s)，至少需要靜止這麼長時間才認為是靜止
+still_time_threshold: 0.0
+# 風速估計參數
+wind_estimation_enabled: true
+# 風速估計噪聲 (m/s)
+wind_noise: 0.1
+# 風速估計最大值 (m/s)
+wind_max: 10.0
+# 地形高度估計參數
+terrain_estimation_enabled: false
+# 地形高度估計噪聲 (m)
+terrain_noise: 1.0
+
+# PX4風格EKF參數配置
+ekf:
+  # 基本參數
+  frequency: 50.0       # EKF更新頻率 (Hz)
+  sensor_timeout: 5.0   # 傳感器超時時間 (秒)
+  
+  # 座標系統設置
+  coordinate_system: "ned"  # 使用NED座標系 (北東地)
+  
+  # 傳感器設置
+  use_imu: true
+  use_gps: false         # 禁用GPS數據 - 修改為false
+  use_mag: true
+  use_baro: true
+  use_odom: true         # 啟用里程計數據
+  use_gps_vel: false     # 禁用GPS速度數據 - 修改為false
+  min_gps_satellites: 6  # 最小GPS衛星數量要求
+  
+  # 傳感器延遲補償
+  delay_compensation:
+    enabled: true
+    imu_delay: 0.0    # IMU延遲 (秒)
+    gps_delay: 0.2    # GPS延遲 (秒)
+    mag_delay: 0.0    # 磁力計延遲 (秒)
+    baro_delay: 0.1   # 氣壓計延遲 (秒)
+    odom_delay: 0.05  # 里程計延遲 (秒)
+  
+  # 流程噪聲參數 (PX4標準設置)
+  process_noise:
+    q_pos: 0.5          # 位置流程噪聲 - 恢復預設值
+    q_vel: 1.0          # 速度流程噪聲 - 恢復預設值
+    q_att: 0.1          # 姿態流程噪聲
+    q_gyro_bias: 0.001  # 陀螺儀偏差流程噪聲 - 恢復預設值
+    q_accel_bias: 0.003 # 加速度計偏差流程噪聲 - 恢復預設值
+  
+  # 測量噪聲參數
+  measurement_noise:
+    r_gps_xy: 1.0       # GPS水平位置噪聲 (米)
+    r_gps_z: 3.0        # GPS垂直位置噪聲 (米)
+    r_gps_vxy: 0.5      # GPS水平速度噪聲 (米/秒)
+    r_gps_vz: 1.0       # GPS垂直速度噪聲 (米/秒)
+    r_mag: 0.5          # 磁力計噪聲 (高斯)
+    r_baro: 2.0         # 氣壓計高度噪聲 (米)
+    r_odom_xy: 0.05     # 里程計水平位置噪聲 (米) - 降低為更高的權重
+    r_odom_z: 0.5       # 里程計垂直位置噪聲 (米) - 增加到0.5適應高度差異
+    r_odom_vxy: 0.10    # 里程計水平速度噪聲 (米/秒) - 增加至0.10
+    r_odom_vz: 0.15     # 里程計垂直速度噪聲 (米/秒) - 增加至0.15
+    r_odom_att: 0.01    # 里程計姿態噪聲 (弧度) - 降低為更高的權重
+  
+  # 新增：原始GPS數據處理
+  raw_gps:
+    noise_lat_lon: 2.0  # 原始GPS緯度/經度噪聲(米)
+    noise_alt: 5.0      # 原始GPS高度噪聲(米)
+    pos_innov_gate: 3.0 # GPS位置新息閾值
+    vel_innov_gate: 5.0 # GPS速度新息閾值
+    dynamic_noise: true # 是否根據衛星數量動態調整噪聲
+  
+  # 初始協方差
+  initial_covariance:
+    p0_pos: 1.0         # 初始位置協方差
+    p0_vel: 1.0         # 初始速度協方差
+    p0_att: 0.1         # 初始姿態協方差
+    p0_gyro_bias: 0.01  # 初始陀螺儀偏差協方差
+    p0_accel_bias: 0.01 # 初始加速度計偏差協方差
+  
+  # 互補濾波器參數
+  complementary_filter:
+    tau_vel: 0.25       # 速度互補濾波器時間常數
+    tau_pos: 0.25       # 位置互補濾波器時間常數
+  
+  # 傳感器校準參數
+  calibration:
+    mag_declination: [0.0, 0.0, 0.0]  # 磁偏角 (弧度)
+    mag_scale_factors: [1.0, 1.0, 1.0] # 磁力計比例因子
+  
+  # 傳感器檢查參數
+  sensor_checks:
+    gps_check_threshold: 10.0  # GPS健康度檢查閾值
+    mag_check_threshold: 0.3   # 磁力計健康度檢查閾值
+    baro_check_threshold: 5.0  # 氣壓計健康度檢查閾值
+  
+  # 中值濾波器設置
+  filters:
+    gps_median_filter_size: 5  # GPS中值濾波器窗口大小
+    baro_median_filter_size: 5 # 氣壓計中值濾波器窗口大小
+    
+  # 數據記錄
+  logging:
+    enabled: true
+    output_path: "/home/jim/Benny/catkin_ws/ekf_log.csv"
+    log_frequency: 10.0  # 日誌記錄頻率 (Hz) 

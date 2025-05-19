@@ -1,0 +1,117 @@
+<?xml version="1.0"?>
+<!-- 
+  PX4風格EKF啟動文件
+  功能：啟動PX4風格的EKF系統，用於處理多傳感器融合定位
+  作者：Benny
+  日期：2023-05-04
+-->
+<launch>
+  <!-- ===== 1. 基礎設置 ===== -->
+  <!-- 使用仿真時鐘 -->
+  <param name="use_sim_time" value="true"/>
+
+  <!-- NED坐標系統參數 -->
+  <arg name="use_ned_frame"    default="true"/>
+  <arg name="convert_from_enu" default="true"/>
+
+  <!-- 加載EKF參數文件 -->
+  <rosparam command="load" file="$(find ekf)/config/px4_style_ekf_params.yaml"/>
+
+  <!-- ===== 2. 傳感器轉換節點 ===== -->
+  <!-- 氣壓計數據轉換處理 -->
+  <node pkg="ekf" type="pressure_converter.py" name="pressure_converter" output="screen">
+    <param name="input_topic"    value="/mavros/imu/static_pressure"/>
+    <param name="output_topic"   value="/baro/pressure"/>
+    <param name="use_ned_frame"  value="$(arg use_ned_frame)"/>
+  </node>
+
+  <!-- ===== 3. PX4風格EKF核心節點 ===== -->
+  <node pkg="ekf" type="px4_ekf_simple_node" name="px4_style_ekf" output="screen">
+    <!-- 3.1 濾波器基本參數 -->
+    <param name="frequency"       value="50.0"/>
+    <param name="sensor_timeout"  value="0.5"/>
+    <param name="map_frame_id"    value="map_ned"/>
+    <param name="base_frame_id"   value="odom_ned"/>
+    <param name="global_frame_id" value="world"/>
+    <param name="ekf_rate"        value="50.0"/>
+
+    <!-- 3.2 坐標系統設置 -->
+    <param name="coordinate_system" value="ned"/>
+    <param name="use_ned_frame"     value="$(arg use_ned_frame)"/>
+    <param name="convert_from_enu"  value="$(arg convert_from_enu)"/>
+
+    <!-- 3.3 傳感器使能開關 -->
+    <param name="use_mag"          value="true"/>     <!-- 磁力計 -->
+    <param name="use_gps"          value="true"/>    <!-- GPS位置 -->
+    <param name="use_baro"         value="true"/>     <!-- 氣壓計 -->
+    <param name="use_gps_vel"      value="true"/>    <!-- GPS速度 -->
+    <param name="use_odom"         value="false"/>     <!-- 里程計 -->
+    <param name="use_odom_height"  value="false"/>    <!-- 里程計高度 -->
+
+    <!-- 3.4 創新門限參數 -->
+    <param name="vel_innov_gate"  value="15.0"/>     <!-- 速度創新門限 -->
+    <param name="pos_innov_gate"  value="15.0"/>     <!-- 位置創新門限 -->
+
+    <!-- 3.5 GPS相關參數 (即使未啟用也保留) -->
+    <param name="min_gps_satellites" value="6"/>      <!-- 最小衛星數量 -->
+    <param name="gps_noise_lat_lon"  value="2.0"/>    <!-- 經緯度噪聲 -->
+    <param name="gps_noise_alt"      value="5.0"/>    <!-- 高度噪聲 -->
+    <param name="gps_pos_innov_gate" value="3.0"/>    <!-- GPS創新門限 -->
+
+    <!-- 3.6 話題重映射 -->
+    <remap from="imu_data"       to="/mavros/imu/data"/>
+    <remap from="mag_data"       to="/mavros/imu/mag"/>
+    <remap from="odom_data"      to="/gazebo/odom_ned"/>
+    <remap from="baro_data"      to="/baro/pressure"/>
+    <remap from="gps_data"       to="/mavros/global_position/raw/fix"/>
+    <remap from="gps_vel_data"   to="/mavros/global_position/raw/gps_vel"/>
+    <remap from="gps_sat_data"   to="/mavros/global_position/raw/satellites"/>
+
+    <!-- 3.7 輸出與日誌設置 -->
+    <param name="publish_status"  value="true"/>
+    <param name="status_topic"    value="/ekf/status"/>
+    <param name="debug_mode"      value="true"/>
+    <param name="verbose_output"  value="true"/>
+    <param name="publish_tf"      value="true"/>
+    <param name="log_data"        value="true"/>
+    <param name="log_file_path"   value="$(find ekf)/logs/ekf_log.csv"/>
+  </node>
+
+  <!-- ===== 4. 坐標轉換 ===== -->
+  <!-- ENU → NED 靜態變換 -->
+  <node pkg="tf2_ros" type="static_transform_publisher" name="enu_to_ned"
+        args="0 0 0 1.5708 0 1.5708 map map_ned"/>
+
+  <!-- ===== 5. 監控與可視化 ===== -->
+  <!-- EKF監控節點 -->
+  <node pkg="ekf" type="ekf_monitor.py" name="ekf_monitor" output="screen">
+    <param name="print_frequency" value="1.0"/>
+    <param name="use_ned_frame"   value="$(arg use_ned_frame)"/>
+    <param name="log_rate"        value="10.0"/>
+    <param name="log_file_path"   value="$(find ekf)/logs/ekf_monitor_log.csv"/>
+  </node>
+
+  <!-- 路徑繪圖節點 -->
+  <node pkg="ekf" type="path_plotter.py" name="path_plotter" output="screen">
+    <param name="pose_topic"  value="/px4_style_ekf/pose"/>
+    <param name="save_path"   value="$(find ekf)/logs/ekf_path.png"/>
+    <param name="max_points"  value="500"/>
+    <param name="update_rate" value="1.0"/>
+  </node>
+
+  <!-- 
+    ===== 6. 已禁用的節點 =====
+    以下節點已被禁用，避免與新的里程計數據流衝突
+  -->
+  <!-- 
+  <node pkg="ekf" type="odom_control_node.py" name="odom_control" output="screen">
+    <param name="mavros_odom_topic"        value="/mavros/odometry/out"/>
+    <param name="mavros_vision_pose_topic" value="/mavros/vision_pose/pose"/>
+    <param name="ekf_odom_topic"           value="/odom_data"/>
+    <param name="position_filter_alpha"    value="0.2"/>
+    <param name="velocity_filter_alpha"    value="0.3"/>
+    <param name="max_pos_jump"             value="1.0"/>
+    <param name="max_vel"                  value="10.0"/>
+  </node>
+  -->
+</launch>

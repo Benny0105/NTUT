@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- 啟動PX4 SITL & MAVROS -->
+  <include file="$(find px4)/launch/mavros_posix_sitl.launch">
+    <arg name="vehicle" value="iris_vision"/>
+    <!-- 其他PX4模擬參數保持默認 -->
+  </include>
+
+  <!-- 等待一段時間確保PX4完全啟動 -->
+  <arg name="startup_delay" default="10.0" />
+  <node pkg="rostopic" type="rostopic" name="wait_for_px4" 
+        args="echo -n 1 /mavros/state"
+        launch-prefix="bash -c 'sleep $(arg startup_delay); $0 $@'" />
+
+  <!-- 啟動EKF系統 -->
+  <include file="$(find ekf)/launch/px4_ekf_sim.launch" />
+</launch> 

@@ -1,0 +1,13 @@
+<launch>
+    <!-- 先 source catkin_ws 環境變數 -->
+    <env name="ROS_PACKAGE_PATH" value="$(env ROS_PACKAGE_PATH):/home/jim/Benny/catkin_ws/src"/>
+    <env name="PATH" value="$(env PATH):/home/jim/Benny/catkin_ws/devel/lib"/>
+    <env name="PYTHONPATH" value="/home/jim/Benny/catkin_ws/devel/lib/python3/dist-packages:$(env PYTHONPATH)"/>
+
+    <!-- 啟動 RandomWindPublisher -->
+    <node pkg="apply_wind_force" type="random_wind_publisher.py" name="random_wind_publisher" output="screen" />
+
+    <!-- 啟動 ApplyWindForceNode -->
+    <node pkg="apply_wind_force" type="apply_wind_force_node.py" name="apply_wind_force_node" output="screen" />
+</launch>
+

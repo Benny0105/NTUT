@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- 啟動GPS控制節點 -->
+  <node pkg="ekf" type="gps_control_node.py" name="gps_control_node" output="screen">
+    <!-- MAVROS GPS 話題配置 -->
+    <param name="mavros_gps_topic" value="/mavros/global_position/raw/fix"/>
+    <param name="mavros_gps_vel_topic" value="/mavros/global_position/raw/gps_vel"/>
+    <param name="mavros_gps_sat_topic" value="/mavros/global_position/raw/satellites"/>
+    
+    <!-- EKF GPS 話題配置 -->
+    <param name="ekf_gps_topic" value="/gps_data"/>
+    <param name="ekf_gps_vel_topic" value="/gps_vel_data"/>
+    <param name="ekf_gps_sat_topic" value="/gps_sat_data"/>
+  </node>
+</launch> 

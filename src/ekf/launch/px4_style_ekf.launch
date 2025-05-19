@@ -1,0 +1,119 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- 載入參數文件 -->
+  <rosparam command="load" file="$(find ekf)/config/px4_style_ekf_params.yaml"/>
+
+  <!-- 啟動傳感器接口節點 - 為 Gazebo 模擬添加支援 -->
+  <node pkg="ekf" type="px4_gazebo_interface" name="px4_gazebo_interface" output="screen">
+    <!-- 設置PX4 Gazebo中的主題名稱 -->
+    <param name="px4_imu_topic" value="/mavros/imu/data_raw"/>
+    <param name="px4_gps_topic" value="/mavros/global_position/global"/>
+    <param name="px4_mag_topic" value="/mavros/imu/mag"/>
+    <param name="px4_baro_topic" value="/mavros/imu/static_pressure"/>
+    <param name="enable_position_print" value="true"/>
+    <param name="print_frequency" value="1.0"/>
+  </node>
+
+  <!-- 啟動 PX4 風格 EKF 節點 -->
+  <node pkg="ekf" type="px4_style_ekf_node" name="px4_style_ekf" output="screen">
+    <!-- 基本參數 -->
+    <param name="freq" value="50.0"/>
+    <param name="sensor_timeout" value="1.0"/>
+    <param name="base_frame_id" value="base_link"/>
+    <param name="global_frame_id" value="map"/>
+    <param name="output_frame_id" value="odom_combined"/>
+    
+    <!-- 傳感器設置 -->
+    <param name="use_imu" value="true"/>
+    <param name="use_gps" value="true"/>
+    <param name="use_mag" value="true"/>
+    <param name="use_baro" value="true"/>
+    <param name="use_odom" value="false"/>
+    
+    <!-- 延遲補償參數 -->
+    <param name="imu_delay" value="0.0"/>
+    <param name="gps_delay" value="0.2"/>
+    <param name="mag_delay" value="0.0"/>
+    <param name="baro_delay" value="0.1"/>
+    <param name="odom_delay" value="0.1"/>
+    
+    <!-- 互補濾波器時間常數 -->
+    <param name="tau_vel" value="0.25"/>
+    <param name="tau_pos" value="0.25"/>
+    
+    <!-- 訂閱主題的重新映射 -->
+    <remap from="imu_data" to="/imu/data"/>
+    <remap from="gps_fix" to="/gps/fix"/>
+    <remap from="mag_data" to="/imu/mag"/>
+    <remap from="baro_data" to="/baro/height"/>
+    
+    <!-- 發布主題的重新映射 -->
+    <remap from="pose" to="/px4_style_ekf/pose"/>
+    <remap from="odom" to="/px4_style_ekf/odom"/>
+    <remap from="velocity" to="/px4_style_ekf/velocity"/>
+
+    <!-- 用於動態重新配置參數的伺服器 -->
+    <param name="publish_tf" value="true" />
+    
+    <!-- 添加CSV數據記錄功能 -->
+    <!-- 注意：這些參數只有在px4_style_ekf.cpp已實現CSV輸出功能時才有效 -->
+    <param name="log_data" value="true" />
+    <param name="log_file_path" value="/home/jim/Benny/catkin_ws/px4_style_ekf_log.csv" />
+  </node>
+
+  <!-- 添加簡化版EKF節點用於CSV日誌記錄 -->
+  <!-- 這個節點只用於記錄數據，不影響原有的EKF功能 -->
+  <node pkg="ekf" type="px4_ekf_simple_node" name="px4_ekf_logger" output="screen">
+    <!-- 基本參數 -->
+    <param name="frequency" value="50.0"/>
+    <param name="sensor_timeout" value="1.0"/>
+    <param name="map_frame_id" value="map"/>
+    <param name="base_frame_id" value="base_link"/>
+    
+    <!-- 關閉這個節點的傳感器融合，只用於數據記錄 -->
+    <param name="use_mag" value="false"/>
+    <param name="use_gps" value="false"/>
+    <param name="use_baro" value="false"/>
+    <param name="publish_tf" value="false" />
+    
+    <!-- 數據日誌設置 -->
+    <param name="log_data" value="true" />
+    <param name="log_file_path" value="/home/jim/Benny/catkin_ws/ekf_log.csv" />
+    
+    <!-- 將輸出重新映射，避免與主EKF節點衝突 -->
+    <remap from="pose" to="/px4_ekf_logger/pose"/>
+    <remap from="odom" to="/px4_ekf_logger/odom"/>
+    <remap from="velocity" to="/px4_ekf_logger/velocity"/>
+  </node>
+
+  <!-- TF靜態變換發布器 -->
+  <node pkg="tf2_ros" type="static_transform_publisher" name="map_to_odom" 
+        args="0 0 0 0 0 0 map odom_combined" />
+        
+  <!-- 可視化 -->
+  <node pkg="rviz" type="rviz" name="rviz" 
+        args="-d $(find ekf)/config/px4_style_ekf.rviz" required="false" />
+        
+  <!-- 傳感器模擬（可選） -->
+  <arg name="simulate_sensors" default="false" />
+  <group if="$(arg simulate_sensors)">
+      <!-- IMU數據發布 -->
+      <node pkg="topic_tools" type="relay" name="imu_relay" 
+            args="/imu/data /imu/data_raw" />
+      
+      <!-- GPS數據模擬 -->
+      <node pkg="rostopic" type="rostopic" name="gps_sim" 
+            args="pub -r 5 /gps/fix sensor_msgs/NavSatFix '{header: {stamp: now, frame_id: &quot;gps&quot;}, status: {status: 0, service: 1}, latitude: 37.7749, longitude: -122.4194, altitude: 10.0, position_covariance: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0], position_covariance_type: 1}'" 
+            respawn="true" />
+      
+      <!-- 氣壓計數據模擬 -->
+      <node pkg="rostopic" type="rostopic" name="baro_sim" 
+            args="pub -r 10 /baro/height std_msgs/Float32 '{data: 10.0}'" 
+            respawn="true" />
+            
+      <!-- 磁力計數據模擬 -->
+      <node pkg="rostopic" type="rostopic" name="mag_sim" 
+            args="pub -r 10 /mag sensor_msgs/MagneticField '{header: {stamp: now, frame_id: &quot;base_link&quot;}, magnetic_field: {x: 0.0, y: 0.2, z: 0.4}}'" 
+            respawn="true" />
+  </group>
+</launch> 

@@ -1,0 +1,16 @@
+<launch>
+    <!-- 啟動VINS-Fusion節點 -->
+    <node name="vins_estimator" pkg="vins" type="vins_node" output="screen" args="$(find vins)/../config/gazebo.yaml" />
+    
+    <!-- 啟動回環檢測節點 -->
+    <node name="loop_fusion" pkg="loop_fusion" type="loop_fusion_node" output="screen" args="$(find vins)/../config/gazebo.yaml" />
+    
+    <!-- 啟動尺度調整節點 -->
+    <node name="vins_scale_adjuster" pkg="vins" type="scale_adjuster_node" output="screen">
+        <param name="scale_factor" type="double" value="0.001" />
+        <param name="output_path" type="string" value="/home/jim/Benny/catkin_ws/src/VINS-Fusion/output/scaled_vio.csv" />
+    </node>
+    
+    <!-- 啟動RViz可視化 -->
+    <include file="$(find vins)/launch/vins_rviz.launch" />
+</launch> 

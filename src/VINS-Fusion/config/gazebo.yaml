@@ -1,0 +1,57 @@
+%YAML:1.0
+
+# 0. 感測器 Topic
+imu: 1
+num_of_cam: 1
+
+imu_topic:    "/mavros/imu/data"
+image0_topic: "/iris_vision/usb_cam/image_raw"
+
+# 1. 相機標定檔案
+cam0_calib: "gazebo_camera.yaml"
+
+# 2. 外參 (IMU body → Camera cam0)
+estimate_extrinsic: 0
+body_T_cam0: !!opencv-matrix
+  rows: 4
+  cols: 4
+  dt: d
+  data: [ 0.0,  0.0,  1.0,  0.0,
+          0.0,  1.0,  0.0,  0.0,
+         -1.0,  0.0,  0.0, -0.07,
+          0.0,  0.0,  0.0,  1.0]
+
+# 3. 特徵追蹤 / 優化參數
+multiple_thread:    1
+max_cnt:            250
+min_dist:           20
+freq:               10
+F_threshold:        1.0
+max_solver_time:    0.06
+max_num_iterations: 12
+keyframe_parallax: 15.0
+
+# 4. IMU 雜訊 (根據Gazebo模型中的參數轉換)
+acc_n:  0.0263     # accelerometerNoiseDensity * sqrt(200Hz) = 0.00186 * sqrt(200)
+gyr_n:  0.00264    # gyroscopeNoiseDensity * sqrt(200Hz) = 0.00018665 * sqrt(200)
+acc_w:  0.0849     # accelerometerRandomWalk * sqrt(200Hz) = 0.006 * sqrt(200)
+gyr_w:  0.000549   # gyroscopeRandomWalk * sqrt(200Hz) = 3.8785e-05 * sqrt(200)
+g_norm: 9.81007
+
+# 5. 時間同步 & 回環
+estimate_td:            0
+td:                     0.0
+load_previous_pose_graph: 0
+pose_graph_save_path:   "/home/jim/Benny/catkin_ws/src/VINS-Fusion/pose_graph/"
+output_path:            "/home/jim/Benny/catkin_ws/src/VINS-Fusion/output"
+save_image:             1
+
+# 6. 回環檢測參數
+loop_closure: 1
+min_loop_num: 10
+min_loop_score: 0.7
+keyframe_database_resample_interval: 0.2
+pose_graph_optimization_step1: 100
+pose_graph_optimization_step2: 100
+relocalization_num: 20
+
